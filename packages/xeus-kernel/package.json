@@ -39,7 +39,7 @@
   "scripts": {
     "build:dockerimage": "docker build -t mydockerimage  --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .",
     "build:emscripten": "echo $(pwd) && docker run --rm -v $(pwd):/src    -u $(id -u):$(id -g)  mydockerimage    ./build.sh",
-    "copy-files": "copyfiles -u 1 src/*.wasm  lib",
+    "copy-files": "copyfiles -u 1 src/*.wasm  src/xeus_dummy.worker.js src/xeus_dummy.js lib",
     "build": "yarn run build:lib",
     "build:lib": "yarn run build:dockerimage && yarn run build:emscripten && yarn run copy-files && tsc -b",
     "build:test": "tsc --build tsconfig.test.json",

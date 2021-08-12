@@ -176,12 +176,15 @@ fs.copySync('../bootstrap.js', entryPoint);
 
 module.exports = [
   merge(baseConfig, {
+    stats: 'verbose',
     mode: 'development',
     devtool: 'source-map',
     entry: ['./publicpath.js', entryPoint],
     resolve: {
       fallback: {
         util: false
+        // ,
+        //extensions: ['.js', '.json', '.wasm'],
       }
     },
     output: {
@@ -193,13 +196,22 @@ module.exports = [
       filename: 'bundle.js',
       chunkFilename: '[name].[contenthash].js',
       // to generate valid wheel names
-      assetModuleFilename: '[name][ext][query]'
+      assetModuleFilename: '[name][ext][query]',
+      webassemblyModuleFilename: "[hash].wasm"
     },
     module: {
       rules: [
         {
           test: /\.whl/,
           type: 'asset/resource'
+        },
+        {
+            test: /\.wasm$/,
+            type: 'webassembly/async', // ← !!
+            loader: 'file-loader',
+            options: {
+              publicPath: 'public/static/wasm/'
+            }
         },
         {
           resourceQuery: /raw/,
@@ -209,6 +221,9 @@ module.exports = [
     },
     optimization: {
       moduleIds: 'deterministic'
+    },
+    experiments: {
+      asyncWebAssembly: true
     },
     plugins: [
       new webpack.DefinePlugin({
