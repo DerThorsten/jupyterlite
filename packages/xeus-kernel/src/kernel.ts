@@ -5,8 +5,7 @@ import { BaseKernel, IKernel } from '@jupyterlite/kernel';
 import { PromiseDelegate } from '@lumino/coreutils';
 
 import createXeusModule from './xeus_dummy';
-import * as fo from './xeus_helper';
-console.log(fo)
+
 //import xeusModule from './xeus_dum_helmy.wasm';
 
 export class XeusKernel extends BaseKernel implements IKernel {
@@ -36,7 +35,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
    * A promise that is fulfilled when the kernel is ready.
    */
   get ready(): Promise<void> {
-    //console.log('try to locate file222222', SampleWASM);
+    console.log('try to locate file');
     return createXeusModule().then((mymod: any) => {
     // {
     //   locateFile(path:any) {
