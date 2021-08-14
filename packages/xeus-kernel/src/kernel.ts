@@ -4,9 +4,13 @@ import { BaseKernel, IKernel } from '@jupyterlite/kernel';
 
 import { PromiseDelegate } from '@lumino/coreutils';
 
-import createXeusModule from './xeus_dummy';
+// import createXeusModule from './xeus_dummy';
+// import {XeusInterpreter} from './xeus_interpreter';
 
-//import xeusModule from './xeus_dum_helmy.wasm';
+import XeusWorker from "worker-loader!./worker";
+
+
+// console.log(XeusInterpreter)
 
 export class XeusKernel extends BaseKernel implements IKernel {
   /**
@@ -15,9 +19,19 @@ export class XeusKernel extends BaseKernel implements IKernel {
    * @param options The instantiation options for a new XeusKernel
    */
 
-  xeus_mod: any;
+  xeus_interpreter: any;
   constructor(options: XeusKernel.IOptions) {
     super(options);
+
+
+    console.log("create worker")
+    this._worker = new XeusWorker();
+    console.log("create worker DONE")
+    console.log(this._worker)
+    this._worker.onmessage = e => {
+      this._processWorkerMessage(e.data);
+    };
+    console.log(this._worker,XeusWorker)
   }
 
   /**
@@ -31,30 +45,86 @@ export class XeusKernel extends BaseKernel implements IKernel {
     super.dispose();
   }
 
+  raw_publisher(msg_type:string, metadata:string, content:string, buffer_sequence:any) : void {
+    console.log(`msg_type ${msg_type}`);
+    console.log(`metadata ${metadata}`);
+    console.log(`content ${content}`);
+    console.log(`buffer_sequence ${buffer_sequence.size()}`);
+    for (var i = 0; i < buffer_sequence.size(); i++) {
+      console.log('Vector Value: ', buffer_sequence.get(i));
+    }
+  }
+
   /**
    * A promise that is fulfilled when the kernel is ready.
    */
-  get ready(): Promise<void> {
-    console.log('try to locate file');
-    return createXeusModule().then((mymod: any) => {
-    // {
-    //   locateFile(path:any) {
-    //     console.log(SampleWASM)
-    //     return "64e406639afafaa0e16bd93a9aa6701d.wasm"
-    //     // if(path.endsWith('.wasm')) {
-    //     //   return SampleWASM;
-    //     // }
-    //     // return path;
-    //   }
-    // }
-      // Store the CPP library as an instance attribute
-      console.log('STORE');
-      this.xeus_mod = mymod;
-      console.log('STORE DONE');
-    });
-    //return this._ready.promise;
-  }
+  // get ready(): Promise<void> {
+  //   return this._ready.promise;
+  // }
 
+ /**
+   * Process a message coming from the pyodide web worker.
+   *
+   * @param msg The worker message to process.
+   */
+  private _processWorkerMessage(msg: any): void {
+    console.log("message from worker",msg)
+    switch (msg.type) {
+      case 'stream': {
+        const bundle = msg.bundle ?? { name: 'stdout', text: '' };
+        this.stream(bundle);
+        break;
+      }
+      case 'input_request': {
+        const bundle = msg.content ?? { prompt: '', password: false };
+        this.inputRequest(bundle);
+        break;
+      }
+      case 'reply': {
+        const bundle = msg.results;
+        this._executeDelegate.resolve(bundle);
+        break;
+      }
+      case 'display_data': {
+        const bundle = msg.bundle ?? { data: {}, metadata: {}, transient: {} };
+        this.displayData(bundle);
+        break;
+      }
+      case 'update_display_data': {
+        const bundle = msg.bundle ?? { data: {}, metadata: {}, transient: {} };
+        this.updateDisplayData(bundle);
+        break;
+      }
+      case 'clear_output': {
+        const bundle = msg.bundle ?? { wait: false };
+        this.clearOutput(bundle);
+        break;
+      }
+      case 'execute_result': {
+        const bundle = msg.bundle ?? { execution_count: 0, data: {}, metadata: {} };
+        this.publishExecuteResult(bundle);
+        break;
+      }
+      case 'execute_error': {
+        const bundle = msg.bundle ?? { ename: '', evalue: '', traceback: [] };
+        this.publishExecuteError(bundle);
+        break;
+      }
+      case 'comm_msg':
+      case 'comm_open':
+      case 'comm_close': {
+        this.handleComm(msg.type, msg.content, msg.metadata, msg.buffers);
+        break;
+      }
+      default:
+        this._executeDelegate.resolve({
+          data: {},
+          metadata: {}
+        });
+        break;
+    }
+  }
+  
   /**
    * Handle a kernel_info_request message
    */
@@ -95,8 +165,10 @@ export class XeusKernel extends BaseKernel implements IKernel {
   async executeRequest(
     content: KernelMessage.IExecuteRequestMsg['content']
   ): Promise<KernelMessage.IExecuteReplyMsg['content']> {
+    
+    console.log("send to worker", content)
     const result = await this._sendRequestMessageToWorker('execute-request', content);
-
+    console.log("send to worker done")
     return {
       execution_count: this.executionCount,
       ...result
@@ -195,10 +267,10 @@ export class XeusKernel extends BaseKernel implements IKernel {
    */
   private async _sendRequestMessageToWorker(type: string, data: any): Promise<any> {
     this._executeDelegate = new PromiseDelegate<any>();
-    //this._worker.postMessage({ type, data, parent: this.parent });
+    this._worker.postMessage({ type, data, parent: this.parent });
     return await this._executeDelegate.promise;
   }
-
+  private _worker: Worker;
   private _executeDelegate = new PromiseDelegate<any>();
   //private _ready = new PromiseDelegate<void>();
 }

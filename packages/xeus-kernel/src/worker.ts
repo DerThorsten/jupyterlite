@@ -26,16 +26,70 @@ async function loadCppModule(): Promise<any> {
 
 const loadCppModulePromise = loadCppModule();
 
+
+async function execute(content: any) {
+
+  // const res = await kernel.run(content.code);
+  // const results = formatResult(res);
+
+  // if (results['status'] === 'error') {
+  //   publishExecutionError(results['ename'], results['evalue'], results['traceback']);
+  // }
+
+  // return results;
+
+  console.log("executeRequestSync", content)
+  let res:any = xeus_interpreter.execute_request(
+    content.code,
+    content.silent,
+    content.store_history,
+    JSON.stringify(content.user_expressions),
+    content.allow_stdin
+  )
+  console.log("executeRequestSyncDONE", res)
+
+  return res
+}
+
+
+
+
+
+
+
+
+
+
+
 ctx.onmessage = async (event: MessageEvent): Promise<void> => {
+  console.log('...on message',event.data);
   await loadCppModulePromise;
+
+  const data = event.data;
+
+  let results;
+  const messageType = data.type;
+  const messageContent = data.data;
+  //kernel._parent_header = pyodide.toPy(data.parent);
+
+
+  switch (messageType) {
+    case 'execute-request':
+      console.log('Perform execution inside worker', data);
+      results = await execute(messageContent);
+      break;
+
+    default:
+      console.log('default', data);
+      break;
+    }
+  const reply = {
+    parentHeader: data.parent['header'],
+    type: 'reply',
+    results
+  };
+
+  postMessage(reply);
+
+  console.log('...on message end',event.data);
 };
-// // We send a message back to the main thread
-// ctx.addEventListener("message", (event) => {
-
-//     // // Get the limit from the event data
-//     // const limit = event.data.limit;
-
-//     console.log("xeus_interpreter",xeus_interpreter)
-//     // Send the primes back to the main thread
-//     ctx.postMessage({ "a":0 });
-// });
