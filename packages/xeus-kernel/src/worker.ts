@@ -7,46 +7,132 @@ console.log(XeusInterpreter, createXeusModule);
 
 // We alias self to ctx and give it our newly created type
 const ctx: Worker = self as any;
-
-let xeus_interpreter: any;
+let xeus_raw_interpreter: any;
+let xeus_interpreter: XeusInterpreter | undefined;
 
 async function loadCppModule(): Promise<any> {
   return createXeusModule().then((Module: any) => {
     console.log('...createdXeusModule IN WORKER');
-    xeus_interpreter = new Module.test_interpreter();
+    xeus_raw_interpreter = new Module.test_interpreter();
+    xeus_interpreter = new XeusInterpreter(xeus_raw_interpreter) 
     console.log('register publisher IN WORKER ....');
-    xeus_interpreter.register_publisher(
-      (msg_type: string, metadata: string, content: string, buffer_sequence: any) => {
+    xeus_interpreter.registerPublisher(
+      (msg_type: string, metadata_str: string, content_str: string, buffer_sequence: any) => {
         console.log('in publisher lambda IN WORKER');
-        //this.raw_publisher(msg_type, metadata, content, buffer_sequence);
+        raw_publisher(msg_type, JSON.parse(metadata_str), JSON.parse(content_str), buffer_sequence);
       }
     );
   });
 }
 
+
+
+const publishExecutionResult = (
+  prompt_count: any,
+  data: any,
+  metadata: any
+): void => {
+  const bundle = {
+    execution_count: prompt_count,
+    data: data,
+    metadata: metadata
+  };
+  postMessage({
+    parentHeader: xeus_interpreter!.parentHeader['header'],
+    bundle,
+    type: 'execute_result'
+  });
+};
+
+const publishStream = (
+  data: any,
+  metadata: any
+): void => {
+  const bundle = {
+    name: data.name,
+    text: data.text,
+    metadata: metadata
+  };
+  postMessage({
+    parentHeader: xeus_interpreter!.parentHeader['header'],
+    bundle,
+    type: 'stream'
+  });
+};
+
+function raw_publisher(messageType: string, metadata: any, content : any, buffer_sequence:any){
+    console.log("in raw_publisher")
+    console.log("messageType", messageType)
+    console.log("metadata", metadata)
+    console.log("content", content)
+    console.log("buffer_sequence", buffer_sequence.size())
+    switch (messageType) {
+        case 'execute_result':
+          publishExecutionResult(0, content, metadata)
+          break
+        case 'stream':
+
+          publishStream(content, metadata)
+          break
+        default:
+          console.log("NOT HANDLED",messageType)
+    }
+
+}
+
 const loadCppModulePromise = loadCppModule();
 
 
+
+
+// const publishExecutionError = (ename: any, evalue: any, traceback: any): void => {
+//   const bundle = {
+//     ename: ename,
+//     evalue: evalue,
+//     traceback: traceback
+//   };
+//   postMessage({
+//     parentHeader: formatResult(kernel._parent_header['header']),
+//     bundle,
+//     type: 'execute_error'
+//   });
+// };
+
+// const clearOutputCallback = (wait: boolean): void => {
+//   const bundle = {
+//     wait: formatResult(wait)
+//   };
+//   postMessage({
+//     parentHeader: formatResult(kernel._parent_header['header']),
+//     bundle,
+//     type: 'clear_output'
+//   });
+// };
+
+// const displayDataCallback = (data: any, metadata: any, transient: any): void => {
+//   const bundle = {
+//     data: formatResult(data),
+//     metadata: formatResult(metadata),
+//     transient: formatResult(transient)
+//   };
+//   postMessage({
+//     parentHeader: formatResult(kernel._parent_header['header']),
+//     bundle,
+//     type: 'display_data'
+//   });
+// };
+
+
+
 async function execute(content: any) {
-
-  // const res = await kernel.run(content.code);
-  // const results = formatResult(res);
-
-  // if (results['status'] === 'error') {
-  //   publishExecutionError(results['ename'], results['evalue'], results['traceback']);
-  // }
-
-  // return results;
-
-  console.log("executeRequestSync", content)
-  let res:any = xeus_interpreter.execute_request(
+  let res:any = xeus_interpreter!.executeRequest(
     content.code,
     content.silent,
     content.store_history,
-    JSON.stringify(content.user_expressions),
+    content.user_expressions,
     content.allow_stdin
   )
-  console.log("executeRequestSyncDONE", res)
+
 
   return res
 }
@@ -62,7 +148,6 @@ async function execute(content: any) {
 
 
 ctx.onmessage = async (event: MessageEvent): Promise<void> => {
-  console.log('...on message',event.data);
   await loadCppModulePromise;
 
   const data = event.data;
@@ -70,17 +155,15 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
   let results;
   const messageType = data.type;
   const messageContent = data.data;
-  //kernel._parent_header = pyodide.toPy(data.parent);
-
+  let parent_header:any = data.parent;
+  xeus_interpreter!.parentHeader = parent_header
 
   switch (messageType) {
     case 'execute-request':
-      console.log('Perform execution inside worker', data);
       results = await execute(messageContent);
       break;
 
     default:
-      console.log('default', data);
       break;
     }
   const reply = {
@@ -91,5 +174,4 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
 
   postMessage(reply);
 
-  console.log('...on message end',event.data);
 };

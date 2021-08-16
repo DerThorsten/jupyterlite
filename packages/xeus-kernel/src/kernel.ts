@@ -45,16 +45,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
     super.dispose();
   }
 
-  raw_publisher(msg_type:string, metadata:string, content:string, buffer_sequence:any) : void {
-    console.log(`msg_type ${msg_type}`);
-    console.log(`metadata ${metadata}`);
-    console.log(`content ${content}`);
-    console.log(`buffer_sequence ${buffer_sequence.size()}`);
-    for (var i = 0; i < buffer_sequence.size(); i++) {
-      console.log('Vector Value: ', buffer_sequence.get(i));
-    }
-  }
-
   /**
    * A promise that is fulfilled when the kernel is ready.
    */
@@ -82,6 +72,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
       }
       case 'reply': {
         const bundle = msg.results;
+        console.log("REPLY",bundle)
         this._executeDelegate.resolve(bundle);
         break;
       }
@@ -102,6 +93,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
       }
       case 'execute_result': {
         const bundle = msg.bundle ?? { execution_count: 0, data: {}, metadata: {} };
+        console.log("execute_result in kernel", bundle);
         this.publishExecuteResult(bundle);
         break;
       }

@@ -72,10 +72,10 @@ RUN cd /opt/nlohmannjson/build && \
 ##################################################################
 # nloman json
 ##################################################################
-RUN mkdir -p /opt/nlohmannjson/build &&  \
-    git clone -b ems https://github.com/DerThorsten/xeus.git   /opt/xeus
+#RUN mkdir -p /opt/nlohmannjson/build &&  \
+#    git clone -b ems https://github.com/DerThorsten/xeus.git   /opt/xeus
 
-#COPY xeus /opt/xeus
+COPY xeus /opt/xeus
 
 RUN cd /install/lib && echo "LS" && ls
 RUN cd /install/include && echo "LS" && ls
