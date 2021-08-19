@@ -8,6 +8,9 @@ export class XeusInterpreter {
   registerPublisher(publisher:any){
     this.xeus_raw_interpreter.register_publisher(publisher)
   }
+  registerStdInSender(stdInSender:any){
+    this.xeus_raw_interpreter.register_stdin_sender(stdInSender)
+  }
   
   executeRequest(code: string, silent:boolean, storeHistory: boolean, userExpressions:any, allowStdin:boolean): any{
     let res:any = this.xeus_raw_interpreter.execute_request(

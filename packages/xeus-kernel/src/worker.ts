@@ -19,7 +19,13 @@ async function loadCppModule(): Promise<any> {
     xeus_interpreter.registerPublisher(
       (msg_type: string, metadata_str: string, content_str: string, buffer_sequence: any) => {
         console.log('in publisher lambda IN WORKER');
-        raw_publisher(msg_type, JSON.parse(metadata_str), JSON.parse(content_str), buffer_sequence);
+        rawPublisher(msg_type, JSON.parse(metadata_str), JSON.parse(content_str), buffer_sequence);
+      }
+    );
+    xeus_interpreter.registerStdInSender(
+      (msg_type: string, metadata_str: string, content_str: string) => {
+        console.log('in stdInSender lambda IN WORKER');
+        rawStdInSender(msg_type, JSON.parse(metadata_str), JSON.parse(content_str));
       }
     );
   });
@@ -60,8 +66,8 @@ const publishStream = (
   });
 };
 
-function raw_publisher(messageType: string, metadata: any, content : any, buffer_sequence:any){
-    console.log("in raw_publisher")
+function rawPublisher(messageType: string, metadata: any, content : any, buffer_sequence:any){
+    console.log("in rawPublisher")
     console.log("messageType", messageType)
     console.log("metadata", metadata)
     console.log("content", content)
@@ -77,7 +83,13 @@ function raw_publisher(messageType: string, metadata: any, content : any, buffer
         default:
           console.log("NOT HANDLED",messageType)
     }
+}
 
+function rawStdInSender(messageType: string, metadata: any, content : any){
+    console.log("in raw_publisher")
+    console.log("messageType", messageType)
+    console.log("metadata", metadata)
+    console.log("content", content)
 }
 
 const loadCppModulePromise = loadCppModule();
