@@ -177,7 +177,6 @@ fs.copySync('../bootstrap.js', entryPoint);
 
 module.exports = [
   merge(baseConfig, {
-    stats: 'verbose',
     mode: 'development',
     devtool: 'source-map',
     entry: ['./publicpath.js', entryPoint],
@@ -245,6 +244,10 @@ module.exports = [
         patterns: [
           {
             from: '../../packages/xeus-kernel/src/xeus_dummy.wasm',
+            to: "."
+          },
+          {
+            from: '../../packages/xeus-kernel/src/xeus_lua.wasm',
             to: "."
           }
         ]

@@ -4,7 +4,14 @@ set -e
 
 
 mkdir -p /src/src
-cd /embuild/wasm
+
+cd /xeus-build
+cd wasm
+
+cp *.{js,wasm} /src/src
+
+
+cd /xeus-lua-build
 cp *.{js,wasm} /src/src
 
 echo "============================================="

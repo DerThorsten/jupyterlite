@@ -126,22 +126,22 @@ export class XeusKernel extends BaseKernel implements IKernel {
       implementation_version: '0.1.0',
       language_info: {
         codemirror_mode: {
-          name: 'python',
+          name: 'lua',
           version: 3
         },
-        file_extension: '.py',
-        mimetype: 'text/x-python',
-        name: 'python',
-        nbconvert_exporter: 'python',
-        pygments_lexer: 'ipython3',
-        version: '3.8'
+        file_extension: '.lua',
+        mimetype: 'text/x-lua',
+        name: 'lua',
+        nbconvert_exporter: 'lua',
+        pygments_lexer: 'lua',
+        version: '5.3'
       },
       protocol_version: '5.3',
       status: 'ok',
       banner: 'Xeus: A WebAssembly-powered dummy kernel backed by xeus',
       help_links: [
         {
-          text: 'Python (WASM) Kernel',
+          text: 'Lua (WASM) Kernel',
           url: 'https://xeus.org'
         }
       ]
@@ -222,7 +222,14 @@ export class XeusKernel extends BaseKernel implements IKernel {
    *
    * @param content - The content of the reply.
    */
-  inputReply(content: KernelMessage.IInputReplyMsg['content']): void {}
+  inputReply(content: KernelMessage.IInputReplyMsg['content']): void {
+    console.log("the inputReply", content)
+    this._worker.postMessage({
+      type: 'input-reply',
+      data: content,
+      parent: this.parent
+    });
+  }
 
   /**
    * Send an `comm_open` message.

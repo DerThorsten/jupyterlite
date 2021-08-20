@@ -1,4 +1,4 @@
-FROM emscripten/emsdk:2.0.26
+FROM emscripten/emsdk:2.0.27
 
 
 ARG USER_ID
@@ -69,9 +69,6 @@ RUN cd /opt/nlohmannjson/build && \
 # xeus itself
 ##################################################################
 
-##################################################################
-# nloman json
-##################################################################
 #RUN mkdir -p /opt/nlohmannjson/build &&  \
 #    git clone -b ems https://github.com/DerThorsten/xeus.git   /opt/xeus
 
@@ -79,7 +76,7 @@ COPY xeus /opt/xeus
 
 RUN cd /install/lib && echo "LS" && ls
 RUN cd /install/include && echo "LS" && ls
-RUN mkdir -p /embuild && cd /embuild  && ls &&\
+RUN mkdir -p /xeus-build && cd /xeus-build  && ls &&\
     emcmake cmake  /opt/xeus \
         -DCMAKE_INSTALL_PREFIX=/install \
         -Dnlohmann_json_DIR=/install/lib/cmake/nlohmann_json \
@@ -89,5 +86,42 @@ RUN mkdir -p /embuild && cd /embuild  && ls &&\
         -DOPENSSL_SSL_LIBRARY=/install/libx32/libssl.a \
         -DOPENSSL_ROOT_DIR=/install/ \
         -DOPENSSL_USE_STATIC_LIBS=ON
-RUN cd /embuild && \
+RUN cd /xeus-build && \
     emmake make -j8 xeus_dummy
+RUN cd /xeus-build && \
+    emmake make install
+
+##################################################################
+# lua
+##################################################################
+RUN git clone https://github.com/DerThorsten/wasm_lua /opt/wasm_lua
+RUN cd /opt/wasm_lua && \
+    emmake make
+
+
+##################################################################
+# xeus-lua
+##################################################################
+
+# RUN mkdir -p /opt/nlohmannjson/build &&  \
+#    git clone -b main https://github.com/DerThorsten/xeus-lua.git   /opt/xeus-lua
+
+COPY xeus-lua /opt/xeus-lua
+
+
+RUN mkdir -p /xeus-lua-build && cd /xeus-lua-build  && ls && \
+    emcmake cmake  /opt/xeus-lua \
+        -DCMAKE_INSTALL_PREFIX=/install \
+        -Dnlohmann_json_DIR=/install/lib/cmake/nlohmann_json \
+        -Dxtl_DIR=/install/share/cmake/xtl \
+        -DOPENSSL_INCLUDE_DIR=/install/include \
+        -DOPENSSL_CRYPTO_LIBRARY=/install/libx32/libcrypto.a \
+        -DOPENSSL_SSL_LIBRARY=/install/libx32/libssl.a \
+        -DOPENSSL_ROOT_DIR=/install/ \
+        -DOPENSSL_USE_STATIC_LIBS=ON \
+        -DLUA_INCLUDE_DIR=/opt/wasm_lua/lua-5.3.4/src \
+        -DLUA_LIBRARY=/opt/wasm_lua/lua-5.3.4/src/liblua.a \
+        -Dxeus_DIR=/install/lib/cmake/xeus 
+
+RUN cd /xeus-lua-build && \
+    emmake make -j8 xeus_lua

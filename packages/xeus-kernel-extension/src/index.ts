@@ -17,21 +17,21 @@ const kernel: JupyterLiteServerPlugin<void> = {
   activate: (app: JupyterLiteServer, kernelspecs: IKernelSpecs) => {
     kernelspecs.register({
       spec: {
-        name: 'Xeus',
-        display_name: 'Xeus',
-        language: 'python',
+        name: 'Xeus-Lua',
+        display_name: 'Xeus-Lua',
+        language: 'lua',
         argv: [],
         spec: {
           argv: [],
           env: {},
-          display_name: 'Xeus',
-          language: 'python',
+          display_name: 'Xeus-Lua',
+          language: 'lua',
           interrupt_mode: 'message',
           metadata: {}
         },
         resources: {
           'logo-32x32': 'TODO',
-          'logo-64x64': '/kernelspecs/python.png'
+          'logo-64x64': '/kernelspecs/xeus_small.svg'
         }
       },
       create: async (options: IKernel.IOptions): Promise<IKernel> => {

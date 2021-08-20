@@ -1,20 +1,50 @@
 // worker.js
 
-import createXeusModule from './xeus_dummy';
+import createXeusLuaModule from './xeus_lua';
 import { XeusInterpreter } from './xeus_interpreter';
 
-console.log(XeusInterpreter, createXeusModule);
+console.log(XeusInterpreter, createXeusLuaModule);
 
 // We alias self to ctx and give it our newly created type
 const ctx: Worker = self as any;
 let xeus_raw_interpreter: any;
 let xeus_interpreter: XeusInterpreter | undefined;
 
+
+async function input(prompt: string) {
+  console.log("in the async func")
+  prompt = typeof prompt === 'undefined' ? '' : prompt;
+  console.log("await sendInputRequest")
+  await sendInputRequest({promt:prompt, password:false});
+  console.log("await sendInputRequest DONE")
+  const replyPromise = new Promise(resolve => {
+    console.log("in resolve",resolve)
+    resolveInputReply = resolve;
+  });
+  console.log("await replyPromise")
+  const result: any = await replyPromise;
+  console.log("the result",result, result['value'])
+  return result['value'];
+  //return "yay"
+}
+
+// eslint-disable-next-line
+// @ts-ignore: breaks typedoc
+ctx.theFunc = input;
+
+// eslint-disable-next-line
+// @ts-ignore: breaks typedoc
+let resolveInputReply: any;
+
 async function loadCppModule(): Promise<any> {
-  return createXeusModule().then((Module: any) => {
+  return createXeusLuaModule().then((Module: any) => {
     console.log('...createdXeusModule IN WORKER');
-    xeus_raw_interpreter = new Module.test_interpreter();
+    xeus_raw_interpreter = new Module.xlua_interpreter();
     xeus_interpreter = new XeusInterpreter(xeus_raw_interpreter) 
+
+    console.log('set input IN WORKER ....');
+    xeus_interpreter.input = input
+
     console.log('register publisher IN WORKER ....');
     xeus_interpreter.registerPublisher(
       (msg_type: string, metadata_str: string, content_str: string, buffer_sequence: any) => {
@@ -22,16 +52,30 @@ async function loadCppModule(): Promise<any> {
         rawPublisher(msg_type, JSON.parse(metadata_str), JSON.parse(content_str), buffer_sequence);
       }
     );
+    console.log('register registerStdInSender IN WORKER ....');
     xeus_interpreter.registerStdInSender(
       (msg_type: string, metadata_str: string, content_str: string) => {
         console.log('in stdInSender lambda IN WORKER');
         rawStdInSender(msg_type, JSON.parse(metadata_str), JSON.parse(content_str));
       }
     );
+
   });
 }
 
 
+// async function getpass(prompt: string) {
+//   prompt = typeof prompt === 'undefined' ? '' : prompt;
+//   await sendInputRequest(prompt, true);
+//   const replyPromise = new Promise(resolve => {
+//     resolveInputReply = resolve;
+//   });
+//   const result: any = await replyPromise;
+//   return result['value'];
+// }
+
+
+console.log(input)
 
 const publishExecutionResult = (
   prompt_count: any,
@@ -47,6 +91,22 @@ const publishExecutionResult = (
     parentHeader: xeus_interpreter!.parentHeader['header'],
     bundle,
     type: 'execute_result'
+  });
+};
+
+const publishExecutionError = (
+  data: any,
+  metadata: any
+): void => {
+  const bundle = {
+    ename: data.ename,
+    evalue: data.evalue,
+    traceback: data.traceback,
+  };
+  postMessage({
+    parentHeader: xeus_interpreter!.parentHeader['header'],
+    bundle,
+    type: 'execute_error'
   });
 };
 
@@ -66,6 +126,19 @@ const publishStream = (
   });
 };
 
+
+async function  sendInputRequest(
+  content: any
+){
+  postMessage({
+    parentHeader: xeus_interpreter!.parentHeader['header'],
+    content,
+    type: 'input_request'
+  });
+};
+
+console.log(sendInputRequest)
+
 function rawPublisher(messageType: string, metadata: any, content : any, buffer_sequence:any){
     console.log("in rawPublisher")
     console.log("messageType", messageType)
@@ -76,20 +149,35 @@ function rawPublisher(messageType: string, metadata: any, content : any, buffer_
         case 'execute_result':
           publishExecutionResult(0, content, metadata)
           break
-        case 'stream':
 
+        case 'stream':
           publishStream(content, metadata)
           break
+
+        case 'error':
+          publishExecutionError(content, metadata)
+          break
+
         default:
           console.log("NOT HANDLED",messageType)
     }
 }
 
 function rawStdInSender(messageType: string, metadata: any, content : any){
+
+
     console.log("in raw_publisher")
     console.log("messageType", messageType)
     console.log("metadata", metadata)
     console.log("content", content)
+    switch (messageType) {
+        case 'input_request':
+          //sendInputRequest(content)
+          break
+
+        default:
+          console.log("NOT HANDLED",messageType)
+    }
 }
 
 const loadCppModulePromise = loadCppModule();
@@ -137,7 +225,12 @@ const loadCppModulePromise = loadCppModule();
 
 
 async function execute(content: any) {
-  let res:any = xeus_interpreter!.executeRequest(
+
+  // 
+
+
+  console.log("silent?",content.silent)
+  let res:any = await xeus_interpreter!.executeRequestAsync(
     content.code,
     content.silent,
     content.store_history,
@@ -151,6 +244,16 @@ async function execute(content: any) {
 
 
 
+/**
+ * Complete the code submitted by a user.
+ *
+ * @param content The incoming message with the code to complete.
+ */
+function complete(content: any) {
+  //xeus_interpreter!.input = input
+  const res = xeus_interpreter!.completeRequest(content.code, content.cursor_pos);
+  return res;
+}
 
 
 
@@ -164,20 +267,34 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
 
   const data = event.data;
 
+  console.log("on message",data.type, data)
+
   let results;
   const messageType = data.type;
   const messageContent = data.data;
   let parent_header:any = data.parent;
-  xeus_interpreter!.parentHeader = parent_header
-
+  console.log("set parent header")
+  if(data.type != "input-reply")
+  {
+    xeus_interpreter!.parentHeader = parent_header
+  }
+  console.log("switch")
   switch (messageType) {
     case 'execute-request':
       results = await execute(messageContent);
+      console.log("the results",results)
       break;
-
+    case 'complete-request':
+      results = complete(messageContent);
+      break;
+    case 'input-reply':
+      console.log('input-reply',messageContent)
+      resolveInputReply(messageContent);
+      return;
     default:
       break;
-    }
+  }
+
   const reply = {
     parentHeader: data.parent['header'],
     type: 'reply',

@@ -12,14 +12,44 @@ export class XeusInterpreter {
     this.xeus_raw_interpreter.register_stdin_sender(stdInSender)
   }
   
-  executeRequest(code: string, silent:boolean, storeHistory: boolean, userExpressions:any, allowStdin:boolean): any{
-    let res:any = this.xeus_raw_interpreter.execute_request(
+  // executeRequest(code: string, silent:boolean, storeHistory: boolean, userExpressions:any, allowStdin:boolean): any{
+  //   let res:any = this.xeus_raw_interpreter.execute_request(
+  //     code,
+  //     silent,
+  //     storeHistory,
+  //     JSON.stringify(userExpressions),
+  //     allowStdin
+  //   )
+  //   console.log("WUP",typeof(res),res)
+  //   console.log("ts",res)
+  //   console.log("done") 
+  //   return JSON.parse(res);
+  // }
+
+  async executeRequestAsync(code: string, silent:boolean, storeHistory: boolean, userExpressions:any, allowStdin:boolean): Promise<any>{
+    console.log("this.xeus_raw_interpreter",this.xeus_raw_interpreter)    
+    let res:any = await this.xeus_raw_interpreter.execute_request(
       code,
       silent,
       storeHistory,
       JSON.stringify(userExpressions),
       allowStdin
     )
+    console.log("WUP",typeof(res))
+    console.log("ts",res,"the rest")
+    return JSON.parse(res);
+  }
+
+  completeRequest(code: string, cursorPos:number): any{
+    let res:any = this.xeus_raw_interpreter.complete_request(
+      code,
+      cursorPos
+    )
+    return JSON.parse(res);
+  }
+
+  kernelInfoRequest(code: string, cursorPos:number): any{
+    let res:any = this.xeus_raw_interpreter.kernel_info_request()
     return JSON.parse(res);
   }
 
@@ -29,5 +59,8 @@ export class XeusInterpreter {
 
   public set parentHeader(ph: any) {
     this.xeus_raw_interpreter.set_parent_header_str(JSON.stringify(ph))
+  }
+  public set input(inputFunc: any) {
+    this.xeus_raw_interpreter.set_async_input_func(inputFunc)
   }
 }
