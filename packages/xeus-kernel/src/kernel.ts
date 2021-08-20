@@ -10,7 +10,6 @@ import { PromiseDelegate } from '@lumino/coreutils';
 import XeusWorker from "worker-loader!./worker";
 
 
-// console.log(XeusInterpreter)
 
 export class XeusKernel extends BaseKernel implements IKernel {
   /**
@@ -24,14 +23,10 @@ export class XeusKernel extends BaseKernel implements IKernel {
     super(options);
 
 
-    console.log("create worker")
     this._worker = new XeusWorker();
-    console.log("create worker DONE")
-    console.log(this._worker)
     this._worker.onmessage = e => {
       this._processWorkerMessage(e.data);
     };
-    console.log(this._worker,XeusWorker)
   }
 
   /**
@@ -41,7 +36,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
     if (this.isDisposed) {
       return;
     }
-    console.log(`Dispose worker for kernel ${this.id}`);
     super.dispose();
   }
 
@@ -58,7 +52,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
    * @param msg The worker message to process.
    */
   private _processWorkerMessage(msg: any): void {
-    console.log("message from worker",msg)
     switch (msg.type) {
       case 'stream': {
         const bundle = msg.bundle ?? { name: 'stdout', text: '' };
@@ -66,13 +59,14 @@ export class XeusKernel extends BaseKernel implements IKernel {
         break;
       }
       case 'input_request': {
+        console.log("input-request",msg.content)
         const bundle = msg.content ?? { prompt: '', password: false };
+
         this.inputRequest(bundle);
         break;
       }
       case 'reply': {
         const bundle = msg.results;
-        console.log("REPLY",bundle)
         this._executeDelegate.resolve(bundle);
         break;
       }
@@ -93,7 +87,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
       }
       case 'execute_result': {
         const bundle = msg.bundle ?? { execution_count: 0, data: {}, metadata: {} };
-        console.log("execute_result in kernel", bundle);
         this.publishExecuteResult(bundle);
         break;
       }
@@ -158,9 +151,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
     content: KernelMessage.IExecuteRequestMsg['content']
   ): Promise<KernelMessage.IExecuteReplyMsg['content']> {
     
-    console.log("send to worker", content)
     const result = await this._sendRequestMessageToWorker('execute-request', content);
-    console.log("send to worker done")
     return {
       execution_count: this.executionCount,
       ...result
@@ -223,7 +214,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
    * @param content - The content of the reply.
    */
   inputReply(content: KernelMessage.IInputReplyMsg['content']): void {
-    console.log("the inputReply", content)
     this._worker.postMessage({
       type: 'input-reply',
       data: content,

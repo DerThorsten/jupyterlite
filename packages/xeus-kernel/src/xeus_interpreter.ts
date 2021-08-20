@@ -11,23 +11,8 @@ export class XeusInterpreter {
   registerStdInSender(stdInSender:any){
     this.xeus_raw_interpreter.register_stdin_sender(stdInSender)
   }
-  
-  // executeRequest(code: string, silent:boolean, storeHistory: boolean, userExpressions:any, allowStdin:boolean): any{
-  //   let res:any = this.xeus_raw_interpreter.execute_request(
-  //     code,
-  //     silent,
-  //     storeHistory,
-  //     JSON.stringify(userExpressions),
-  //     allowStdin
-  //   )
-  //   console.log("WUP",typeof(res),res)
-  //   console.log("ts",res)
-  //   console.log("done") 
-  //   return JSON.parse(res);
-  // }
 
   async executeRequestAsync(code: string, silent:boolean, storeHistory: boolean, userExpressions:any, allowStdin:boolean): Promise<any>{
-    console.log("this.xeus_raw_interpreter",this.xeus_raw_interpreter)    
     let res:any = await this.xeus_raw_interpreter.execute_request(
       code,
       silent,
@@ -35,8 +20,6 @@ export class XeusInterpreter {
       JSON.stringify(userExpressions),
       allowStdin
     )
-    console.log("WUP",typeof(res))
-    console.log("ts",res,"the rest")
     return JSON.parse(res);
   }
 
