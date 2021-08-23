@@ -94,7 +94,7 @@ RUN cd /xeus-build && \
 ##################################################################
 # lua
 ##################################################################
-RUN git clone https://github.com/DerThorsten/wasm_lua /opt/wasm_lua
+RUN git clone https://github.com/DerThorsten/wasm_lua   /opt/wasm_lua
 RUN cd /opt/wasm_lua && \
     emmake make
 

@@ -28,7 +28,14 @@ ctx.async_get_input_function = async_get_input_function;
 let resolveInputReply: any;
 
 async function loadCppModule(): Promise<any> {
-  return createXeusLuaModule().then((Module: any) => {
+
+  let options : any = {
+      preRun: [function (module:any) {
+          module.ENV.LUA_PATH = '/asset_dir/lua_packages/?.lua;/asset_dir/lua_packages/?/init.lua';
+      }]
+  };
+
+  return createXeusLuaModule(options).then((Module: any) => {
     xeus_raw_interpreter = new Module.xlua_interpreter();
     xeus_interpreter = new XeusInterpreter(xeus_raw_interpreter) 
 
@@ -194,7 +201,7 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
   {
     xeus_interpreter!.parentHeader = parent_header
   }
-  switch (messageType) {
+switch (messageType) {
     case 'execute-request':
       results = await execute(messageContent);
       
