@@ -107,6 +107,39 @@ const publishStream = (
 };
 
 
+const displayData = (data: any, metadata:any): void => {
+  console.log(data, metadata)
+  const bundle = {
+    data: data.data,
+    metadata: data.metadata,
+    transient: data.transient
+  };
+  postMessage({
+    parentHeader: xeus_interpreter!.parentHeader['header'],
+    bundle,
+    type: 'display_data'
+  });
+};
+
+// const updateDisplayDataCallback = (
+//   data: any,
+//   metadata: any,
+//   transient: any
+// ): void => {
+//   const bundle = {
+//     data: formatResult(data),
+//     metadata: formatResult(metadata),
+//     transient: formatResult(transient)
+//   };
+//   postMessage({
+//     parentHeader: formatResult(kernel._parent_header['header']),
+//     bundle,
+//     type: 'update_display_data'
+//   });
+// };
+
+
+
 async function  sendInputRequest(
   content: any
 ){
@@ -130,6 +163,10 @@ function rawPublisher(messageType: string, metadata: any, content : any, buffer_
 
         case 'error':
           publishExecutionError(content, metadata)
+          break
+
+        case 'display_data':
+          displayData(content, metadata)
           break
 
         default:

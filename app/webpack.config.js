@@ -249,7 +249,12 @@ module.exports = [
           {
             from: '../../packages/xeus-kernel/src/xeus_lua.wasm',
             to: "."
+          },
+          {
+            from: '../../packages/xeus-kernel/src/xeus_lua_kernel.wasm',
+            to: "."
           }
+
         ]
     })
     ]
