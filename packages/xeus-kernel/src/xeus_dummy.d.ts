@@ -2,5 +2,5 @@
 // // export = createXeusModule;
 // // export createXeusModule;
 
-declare var createXeusModule: any;
+declare let createXeusModule: any;
 export default createXeusModule;

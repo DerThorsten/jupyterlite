@@ -356,8 +356,7 @@ self.onmessage = async (event: MessageEvent): Promise<void> => {
   const messageContent = data.data;
   kernel._parent_header = pyodide.toPy(data.parent);
 
-
-  console.log("on message",messageType, data)
+  console.log('on message', messageType, data);
 
   switch (messageType) {
     case 'execute-request':
@@ -391,7 +390,7 @@ self.onmessage = async (event: MessageEvent): Promise<void> => {
 
     case 'comm-msg':
       results = commMsg(messageContent);
-      break; 
+      break;
     case 'comm-close':
       results = commClose(messageContent);
       break;

@@ -15,7 +15,9 @@
     "packages/server/src/index.ts",
     "packages/session/src/index.ts",
     "packages/settings/src/index.ts",
-    "packages/ui-components/src/index.ts"
+    "packages/ui-components/src/index.ts",
+    "packages/xeus-kernel-extension/src/index.ts",
+    "packages/xeus-kernel/src/index.ts"
   ],
   "exclude": ["*.spec.ts", "**/node_modules/**", "**/test/**", "**/lib/**"],
   "name": "@jupyterlite",

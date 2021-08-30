@@ -11,7 +11,7 @@ const Build = require('@jupyterlab/builder').Build;
 const baseConfig = require('@jupyterlab/builder/lib/webpack.config.base');
 
 const data = fs.readJSONSync('./package.json');
-const CopyPlugin = require("copy-webpack-plugin");
+const CopyPlugin = require('copy-webpack-plugin');
 
 /**
  * Create the webpack ``shared`` configuration
@@ -197,7 +197,7 @@ module.exports = [
       chunkFilename: '[name].[contenthash].js',
       // to generate valid wheel names
       assetModuleFilename: '[name][ext][query]',
-      webassemblyModuleFilename: "[hash].wasm"
+      webassemblyModuleFilename: '[hash].wasm'
     },
     module: {
       rules: [
@@ -206,12 +206,12 @@ module.exports = [
           type: 'asset/resource'
         },
         {
-            test: /\.wasm$/,
-            //type: 'webassembly/async', // ← !!
-            loader: 'file-loader',
-            options: {
-              publicPath: 'public/static/wasm/'
-            }
+          test: /\.wasm$/,
+          //type: 'webassembly/async', // ← !!
+          loader: 'file-loader',
+          options: {
+            publicPath: 'public/static/wasm/'
+          }
         },
         {
           resourceQuery: /raw/,
@@ -244,19 +244,18 @@ module.exports = [
         patterns: [
           {
             from: '../../packages/xeus-kernel/src/xeus_dummy.wasm',
-            to: "."
+            to: '.'
           },
           {
             from: '../../packages/xeus-kernel/src/xeus_lua.wasm',
-            to: "."
+            to: '.'
           },
           {
             from: '../../packages/xeus-kernel/src/xeus_lua_kernel.wasm',
-            to: "."
+            to: '.'
           }
-
         ]
-    })
+      })
     ]
   })
 ].concat(extensionAssetConfig);

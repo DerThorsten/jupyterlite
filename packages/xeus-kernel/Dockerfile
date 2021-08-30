@@ -69,10 +69,10 @@ RUN cd /opt/nlohmannjson/build && \
 # xeus itself
 ##################################################################
 
-#RUN mkdir -p /opt/nlohmannjson/build &&  \
-#    git clone -b ems https://github.com/DerThorsten/xeus.git   /opt/xeus
+RUN mkdir -p /opt/nlohmannjson/build &&  \
+   git clone -b ems https://github.com/DerThorsten/xeus.git   /opt/xeus
 
-ADD xeus /opt/xeus
+#ADD xeus /opt/xeus
 
 RUN cd /install/lib && echo "LS" && ls
 RUN cd /install/include && echo "LS" && ls
@@ -148,10 +148,10 @@ RUN cd /opt/xwidgets/build && \
 # xeus-lua
 ##################################################################
 
-# RUN mkdir -p /opt/nlohmannjson/build &&  \
-#    git clone -b main https://github.com/DerThorsten/xeus-lua.git   /opt/xeus-lua
+RUN mkdir -p /opt/nlomannjson/build &&  \
+   git clone -b main https://github.com/DerThorsten/xeus-lua.git   /opt/xeus-lua
 
-COPY xeus-lua /opt/xeus-lua
+#COPY xeus-lua /opt/xeus-lua
 
 
 RUN mkdir -p /xeus-lua-build && cd /xeus-lua-build  && ls && \

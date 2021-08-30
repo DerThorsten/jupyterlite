@@ -7,7 +7,7 @@ import createXeusModule from '../src/xeus_dummy';
 
 createXeusModule().then((mymod: any) => {
   // multipart_t is an emscripten binded class
-  let a = new mymod.multipart_t('a message');
+  const a = new mymod.multipart_t('a message');
 
   console.log(a.str());
 

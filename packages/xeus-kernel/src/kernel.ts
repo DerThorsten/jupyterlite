@@ -7,9 +7,7 @@ import { PromiseDelegate } from '@lumino/coreutils';
 // import createXeusModule from './xeus_dummy';
 // import {XeusInterpreter} from './xeus_interpreter';
 
-import XeusWorker from "worker-loader!./worker";
-
-
+import XeusWorker from 'worker-loader!./worker';
 
 export class XeusKernel extends BaseKernel implements IKernel {
   /**
@@ -21,7 +19,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
   xeus_interpreter: any;
   constructor(options: XeusKernel.IOptions) {
     super(options);
-
 
     this._worker = new XeusWorker();
     this._worker.onmessage = e => {
@@ -46,7 +43,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
   //   return this._ready.promise;
   // }
 
- /**
+  /**
    * Process a message coming from the pyodide web worker.
    *
    * @param msg The worker message to process.
@@ -59,7 +56,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
         break;
       }
       case 'input_request': {
-        console.log("input-request",msg.content)
+        console.log('input-request', msg.content);
         const bundle = msg.content ?? { prompt: '', password: false };
 
         this.inputRequest(bundle);
@@ -109,7 +106,7 @@ export class XeusKernel extends BaseKernel implements IKernel {
         break;
     }
   }
-  
+
   /**
    * Handle a kernel_info_request message
    */
@@ -150,7 +147,6 @@ export class XeusKernel extends BaseKernel implements IKernel {
   async executeRequest(
     content: KernelMessage.IExecuteRequestMsg['content']
   ): Promise<KernelMessage.IExecuteReplyMsg['content']> {
-    
     const result = await this._sendRequestMessageToWorker('execute-request', content);
     return {
       execution_count: this.executionCount,
