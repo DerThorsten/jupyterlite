@@ -1,8 +1,0 @@
-# minimum needed to build jupyterlite... in addition to nodejs and yarn
-# see .binder/ and docs/ for full development/docs environments
--r requirements-build.txt
-
-black
-isort
-jsonschema >=3
-pyflakes

@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -eux
-
-doit build dev
-
-# enable the proxy
-for app in notebook server; do
-    cp .binder/jupyterlite-proxy.json jupyter_${app}_config.json
-done
