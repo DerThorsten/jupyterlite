@@ -216,6 +216,24 @@ module.exports = [
         {
           resourceQuery: /raw/,
           type: 'asset/source'
+        },
+
+        {
+          test: /\.worker\.(c|m)?js$/i,
+          use: [
+            {
+              loader: "worker-loader",
+              options: {
+                filename: '[path].[name].[contenthash].worker.js'
+              }
+            },
+            {
+              loader: "babel-loader",
+              options: {
+                presets: ["@babel/preset-env"],
+              },
+            },
+          ],
         }
       ]
     },

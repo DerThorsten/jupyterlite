@@ -5,26 +5,24 @@ import { JupyterLiteServer, JupyterLiteServerPlugin } from '@jupyterlite/server'
 
 import { IKernel, IKernelSpecs } from '@jupyterlite/kernel';
 
-import { XeusKernel } from '@jupyterlite/xeus-kernel';
+import { XeusServerKernel } from '@jupyterlite/xeus-kernel';
 
-/**
- * A plugin to register the Xeus kernel.
- */
-const kernel: JupyterLiteServerPlugin<void> = {
+
+const server_kernel: JupyterLiteServerPlugin<void> = {
   id: '@jupyterlite/xeus-kernel-extension:kernel',
   autoStart: true,
   requires: [IKernelSpecs],
   activate: (app: JupyterLiteServer, kernelspecs: IKernelSpecs) => {
     kernelspecs.register({
       spec: {
-        name: 'Xeus-Lua',
-        display_name: 'Xeus-Lua',
+        name: 'Xeus-Server-Lua',
+        display_name: 'Xeus-Server-Lua',
         language: 'lua',
         argv: [],
         spec: {
           argv: [],
           env: {},
-          display_name: 'Xeus-Lua',
+          display_name: 'Xeus-Server-Lua',
           language: 'lua',
           interrupt_mode: 'message',
           metadata: {}
@@ -35,7 +33,7 @@ const kernel: JupyterLiteServerPlugin<void> = {
         }
       },
       create: async (options: IKernel.IOptions): Promise<IKernel> => {
-        return new XeusKernel({
+        return new XeusServerKernel({
           ...options
         });
       }
@@ -43,6 +41,11 @@ const kernel: JupyterLiteServerPlugin<void> = {
   }
 };
 
-const plugins: JupyterLiteServerPlugin<any>[] = [kernel];
+
+
+
+
+
+const plugins: JupyterLiteServerPlugin<any>[] = [server_kernel];
 
 export default plugins;
