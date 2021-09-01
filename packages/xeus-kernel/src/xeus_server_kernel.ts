@@ -49,10 +49,14 @@ export class XeusServerKernel implements IKernel {
       console.log("update parent header to execture_request msg header")
       this._parentHeader = msg.header;
     }
-    this._executeDelegate = new PromiseDelegate<void>();
+    if(msg.header.msg_type != "input_reply"){
+      this._executeDelegate = new PromiseDelegate<void>();
+    }
     this._worker.postMessage({msg, parent:this.parent});
     //console.log("await execute _executeDelegate")
-    return await this._executeDelegate.promise;
+    if(msg.header.msg_type != "input_reply"){
+      return await this._executeDelegate.promise;
+    }
   }
 
 
@@ -278,12 +282,13 @@ export class XeusServerKernel implements IKernel {
 
     switch (msg.type) {
       case 'status': {
-        this.status(msg.content, msg.parentHeader)
-        if(msg.content.execution_state == "idle")
+        this.status(msg.bundle, msg.parentHeader)
+        if(msg.bundle.execution_state == "idle")
         {
             console.log("RESOLVING!")
             this._executeDelegate.resolve();
         }
+        break
       }
       case 'kernel_info_reply':
       {
@@ -348,6 +353,7 @@ export class XeusServerKernel implements IKernel {
         this.publishExecuteResult(bundle);
         break;
       }
+      case 'error': 
       case 'execute_error': {
         const bundle = msg.bundle ?? { ename: '', evalue: '', traceback: [] };
         this.publishExecuteError(bundle);

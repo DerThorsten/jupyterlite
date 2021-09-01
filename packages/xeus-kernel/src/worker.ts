@@ -11,7 +11,6 @@ let raw_xserver: any;
 let _parentHeader: any;
 let _sessionId : any;
 
-
 async function async_get_input_function(prompt: string) {
   prompt = typeof prompt === 'undefined' ? '' : prompt;
   await sendInputRequest({ prompt: prompt, password: false });
@@ -121,25 +120,25 @@ function recive_stdin(message: any)
 
 function publish(message: any, channel: string)
 {
-    //console.log("publish", message, channel)
+    console.log("publish", message, channel)
 
     const type = message.header.msg_type
     const parent_header = _parentHeader
 
     switch(type)
     {
-      case "stream":
-      {
-        postMessage({
-          parentHeader : parent_header,
-          bundle: message.content,
-          type: type
-        })
-        break
-      }
+
+      // case "status":
+      // {
+      //   postMessage({type:type, bundle:message.content, parentHeader: _parentHeader})
+      //   break
+      // }
       case "status":
+      case "stream":
+      case "display_data":
+      case "error":
       {
-        postMessage({type:"status", content:message.content, parentHeader: _parentHeader})
+        postMessage({type:type, bundle: message.content, parentHeader: _parentHeader})
         break
       }
       default:{
@@ -200,34 +199,45 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
 
 
   const data = event.data;
-  _parentHeader = data.parent["header"]
-  console.log("parent header in worker", _parentHeader)
   const msg = data.msg 
-  const str_msg = JSON.stringify(msg)
-  console.log("on message in worker",msg)
+  console.log("data", data)
+  const msg_type = msg.header.msg_type
+  if (msg_type !== 'input_reply') {
+    _parentHeader = data.parent["header"]
+  }
+  console.log("parent header in worker", _parentHeader)
 
-  const channel = msg.channel
-  switch(channel)
-  {
-    case "shell":
+  const str_msg = JSON.stringify(msg)
+  console.log("on message in worker",msg_type)
+
+  if(msg_type == "input_reply"){
+    console.log("resolve the input")
+    resolveInputReply(msg.content);
+  }
+  else{
+    const channel = msg.channel
+    switch(channel)
     {
-      raw_xserver!.notify_shell_listener(str_msg)
-      break
-    }
-    case "control":
-    {
-      raw_xserver!.notify_control_listener(str_msg)
-      break
-    }
-    case "shell":
-    {
-      raw_xserver!.notify__listener(str_msg)
-      break
-    }
-    default :
-    {
-      alert(channel)
-      console.log("channel not found", channel)
+      case "shell":
+      {
+        raw_xserver!.notify_shell_listener(str_msg)
+        break
+      }
+      case "control":
+      {
+        raw_xserver!.notify_control_listener(str_msg)
+        break
+      }
+      case "stdin":
+      {
+        raw_xserver!.notify_stdin_listener(str_msg)
+        break
+      }
+      default :
+      {
+        //alert(channel)
+        console.log("channel not found", channel)
+      }
     }
   }
 
