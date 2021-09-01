@@ -23,7 +23,7 @@ export class XeusServerKernel implements IKernel {
     this._id = id;
     this._name = name;
     this._sendMessage = sendMessage;
-
+    console.log("ID", id)
     this._worker = new XeusWorker();
     this._worker.onmessage = e => {
       this._processWorkerMessage(e.data);
@@ -32,15 +32,26 @@ export class XeusServerKernel implements IKernel {
 
 
   async handleMessage(msg: KernelMessage.IMessage): Promise<void> {
+    //this._busy(msg);
+    //this._busy(msg);
     this._parent = msg;
-    console.log("handleMessage",msg)
-    this._sendMessageToWorker(msg)
+    console.log("THE        SID IN HANDLE MESSAGE",msg.header.session,msg)
+    
+
+    await this._sendMessageToWorker(msg)
+    
   }
 
 
-  private async _sendMessageToWorker(msg: any): Promise<any> {
-    this._executeDelegate = new PromiseDelegate<any>();
+  private async _sendMessageToWorker(msg: any): Promise<void> {
+    console.log("SEND TO WORKER",msg.header.msg_type)
+    if(msg.header.msg_type == "execute_request"){
+      console.log("update parent header to execture_request msg header")
+      this._parentHeader = msg.header;
+    }
+    this._executeDelegate = new PromiseDelegate<void>();
     this._worker.postMessage({msg, parent:this.parent});
+    //console.log("await execute _executeDelegate")
     return await this._executeDelegate.promise;
   }
 
@@ -60,6 +71,7 @@ export class XeusServerKernel implements IKernel {
         execution_state: 'busy'
       }
     });
+    console.log("send buisy msg",message);
     this._sendMessage(message);
   }
 
@@ -73,8 +85,23 @@ export class XeusServerKernel implements IKernel {
         execution_state: 'idle'
       }
     });
+    console.log("send idle msg",message);
     this._sendMessage(message);
   }
+
+  private status(content: any, parent_header:any): void {
+    const message = KernelMessage.createMessage<KernelMessage.IStatusMsg>({
+      msgType: 'status',
+      session: parent_header.session ?? '',
+      parentHeader: parent_header,
+      channel: 'iopub',
+      content: content
+    });
+    console.log("send status=>", message);
+    this._sendMessage(message);
+  }
+
+
 
   /**
    * Get the last parent header
@@ -250,6 +277,26 @@ export class XeusServerKernel implements IKernel {
     console.log("message from the worker", msg)
 
     switch (msg.type) {
+      case 'status': {
+        this.status(msg.content, msg.parentHeader)
+        if(msg.content.execution_state == "idle")
+        {
+            console.log("RESOLVING!")
+            this._executeDelegate.resolve();
+        }
+      }
+      case 'kernel_info_reply':
+      {
+        const message = KernelMessage.createMessage<KernelMessage.IInfoReplyMsg>({
+          msgType: 'kernel_info_reply',
+          channel: 'shell',
+          session: msg.parentHeader.session,
+          parentHeader: msg.parentHeader as KernelMessage.IHeader<'kernel_info_request'>,
+          content: msg.content
+        });
+        this._sendMessage(message);
+        break
+      }
       case 'stream': {
         const bundle = msg.bundle ?? { name: 'stdout', text: '' };
         this.stream(bundle);
@@ -260,9 +307,9 @@ export class XeusServerKernel implements IKernel {
         this.inputRequest(bundle);
         break;
       }
+
       case 'reply': {
         const bundle = msg.results;
-        this._executeDelegate.resolve(bundle);
         break;
       }
       case 'display_data': {
@@ -280,8 +327,24 @@ export class XeusServerKernel implements IKernel {
         this.clearOutput(bundle);
         break;
       }
+      case 'execute_reply':
+      {
+         const message = KernelMessage.createMessage<KernelMessage.IExecuteReplyMsg>({
+          msgType: 'execute_reply',
+          channel: 'shell',
+          session: this._parentHeader?.session ?? '',
+          parentHeader: msg.parentHeader, //as KernelMessage.IHeader<'execture_request'>,
+          content: msg.content
+        });
+        console.log("THE CONTENT", msg.content)
+        console.log("session from parentHeader",     this._parentHeader?.session)
+        console.log("session from msg.parentHeader", msg.parentHeader)
+        console.log("the execture reply msg", message)
+        this._sendMessage(message);
+      }
       case 'execute_result': {
         const bundle = msg.bundle ?? { execution_count: 0, data: {}, metadata: {} };
+        console.log("the bundle",bundle)
         this.publishExecuteResult(bundle);
         break;
       }
@@ -297,10 +360,11 @@ export class XeusServerKernel implements IKernel {
         break;
       }
       default:
-        this._executeDelegate.resolve({
-          data: {},
-          metadata: {}
-        });
+        // console.log("RESOLVING!")
+        // this._executeDelegate.resolve({
+        //   data: {},
+        //   metadata: {}
+        // });
         break;
     }
   }
@@ -359,7 +423,7 @@ export class XeusServerKernel implements IKernel {
   private _disposed = new Signal<this, void>(this);
   private _worker: Worker;
   private _sendMessage: IKernel.SendMessage;
-  private _executeDelegate = new PromiseDelegate<any>();
+  private _executeDelegate = new PromiseDelegate<void>();
   private _parentHeader:
     | KernelMessage.IHeader<KernelMessage.MessageType>
     | undefined = undefined;

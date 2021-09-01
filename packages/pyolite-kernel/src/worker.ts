@@ -157,6 +157,8 @@ async function sendInputRequest(prompt: string, password: boolean) {
  * @param content The incoming message with the code to execute.
  */
 async function execute(content: any) {
+
+  
   const publishExecutionResult = (
     prompt_count: any,
     data: any,
@@ -239,7 +241,7 @@ async function execute(content: any) {
       type: 'stream'
     });
   };
-
+  
   stdout_stream.publish_stream_callback = publishStreamCallback;
   stderr_stream.publish_stream_callback = publishStreamCallback;
   interpreter.display_pub.clear_output_callback = clearOutputCallback;

@@ -9,7 +9,7 @@ const ctx: Worker = self as any;
 let raw_xkernel: any;
 let raw_xserver: any;
 let _parentHeader: any;
-
+let _sessionId : any;
 
 
 async function async_get_input_function(prompt: string) {
@@ -42,29 +42,152 @@ ctx.async_get_input_function = async_get_input_function;
 // @ts-ignore: breaks typedoc
 let resolveInputReply: any;
 
+
+function recive_shell(message: any)
+{
+    console.log("recive_shell", message)
+    const type = message.header.msg_type
+    const parent_header = _parentHeader
+
+
+    switch(type)
+    {
+      case "execute_reply":
+      {
+        postMessage({
+          parentHeader: _parentHeader,
+          content: message.content,
+          type: 'execute_reply'
+        });
+        break;
+      }
+      case "kernel_info_reply":
+      {
+        postMessage({
+          parentHeader: _parentHeader,
+          content : message.content,
+          type: 'kernel_info_reply'
+        });
+        break
+      }
+      default:{
+        console.log("unhandeld in recive_shell in worker", type)
+      }
+    }
+
+
+    // postMessage({
+    //     type:type,
+    //     parentHeader:_parentHeader,
+    //     bundle:{
+    //       metadata: message.metadata,
+    //       data:message.content
+    //     }
+    // })
+}
+
+function recive_control(message: any)
+{
+    //console.log("recive_control", message)
+    const type = message.header.msg_type
+    const parent_header = _parentHeader
+    postMessage({
+        type:type,
+        parentHeader:_parentHeader,
+        bundle:{
+          metadata: message.metadata,
+          data:message.content
+        }
+    })
+}
+
+function recive_stdin(message: any)
+{
+    //console.log("recive_stdin", message)
+    const type = message.header.msg_type
+    const parent_header = _parentHeader
+
+
+
+    postMessage({
+        type:type,
+        parentHeader:_parentHeader,
+        bundle:{
+          metadata: message.metadata,
+          data:message.content
+        }
+    })
+}
+
+function publish(message: any, channel: string)
+{
+    //console.log("publish", message, channel)
+
+    const type = message.header.msg_type
+    const parent_header = _parentHeader
+
+    switch(type)
+    {
+      case "stream":
+      {
+        postMessage({
+          parentHeader : parent_header,
+          bundle: message.content,
+          type: type
+        })
+        break
+      }
+      case "status":
+      {
+        postMessage({type:"status", content:message.content, parentHeader: _parentHeader})
+        break
+      }
+      default:{
+        console.log("unhandeld stream in worker", type)
+      }
+    }
+}
+
+
+
+
 async function loadCppModule(): Promise<any> {
   const options: any = {
     // preRun: [
     //   function(module: any) {
     //     module.ENV.LUA_PATH =
-    //       '/asset_dir/lua_packages/?.lua;/asset_dir/lua_packages/?/init.lua';
-    //   }
     // ]
+    //   }
   };
 
   return createXeusModule(options).then((Module: any) => {
     raw_xkernel = new Module.xkernel();
     raw_xserver =  raw_xkernel.get_server()
-    // register stuff
-    console.log("\n\n\nREGISTER\n\n")
+
     raw_xserver!.register_js_callback((type: string, channel:number, data:any)=>{
-      console.log("js_callback", type,channel,data)
+      data = JSON.parse(data)
+      switch(type)
+      {
+        case "shell":{
+          recive_shell(data)
+          break
+        }
+        case "control":{
+          recive_control(data)
+          break
+        }
+        case "stdin":{
+          recive_stdin(data)
+          break
+        }
+        case "publish":{
+          publish(data, channel == 0 ? "shell" : "control")
+          break
+        }
+      }
     })
-    console.log("\n\n\nREGISTER\n\n")
-  
+    raw_xkernel!.start()
   });
-
-
 }
 
 
@@ -78,13 +201,12 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
 
   const data = event.data;
   _parentHeader = data.parent["header"]
-
+  console.log("parent header in worker", _parentHeader)
   const msg = data.msg 
   const str_msg = JSON.stringify(msg)
-  console.log("on message in worker")
+  console.log("on message in worker",msg)
 
   const channel = msg.channel
-  console.log("channel",channel)
   switch(channel)
   {
     case "shell":
@@ -92,13 +214,28 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
       raw_xserver!.notify_shell_listener(str_msg)
       break
     }
+    case "control":
+    {
+      raw_xserver!.notify_control_listener(str_msg)
+      break
+    }
+    case "shell":
+    {
+      raw_xserver!.notify__listener(str_msg)
+      break
+    }
+    default :
+    {
+      alert(channel)
+      console.log("channel not found", channel)
+    }
   }
 
-  const reply = {
-    parentHeader: data.parent['header'],
-    type: 'reply'
-    // results
-  };
+  // const reply = {
+  //   parentHeader: data.parent['header'],
+  //   type: 'reply'
+  //   // results
+  // };
 
-  postMessage(reply);
+  // postMessage(reply);
 };
