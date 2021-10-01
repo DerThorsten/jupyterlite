@@ -19,25 +19,6 @@ RUN mkdir -p /install
 RUN mkdir -p /install/lib
 
 
-##################################################################
-# OpenSSL
-##################################################################
-RUN mkdir -p /opt/openssl/build && \
-    git clone https://github.com/openssl/openssl.git  /opt/openssl/src
-
-
-RUN cd /opt/openssl/build && \
-    emconfigure ../src/Configure -no-shared -disable-shared -no-asm -no-tests -no-unit-test  -static -no-sock -no-afalgeng --prefix=/install
-
-RUN cd /opt/openssl/build && \
-    sed -i 's/.*CROSS_COMPILE=.*/CROSS_COMPILE=""/' Makefile
-
-RUN cd /opt/openssl/build && \
-    emmake make -j8
-
-RUN cd /opt/openssl/build && \
-    emmake make install_sw
-
 
 ##################################################################
 # xtl
@@ -81,15 +62,9 @@ RUN mkdir -p /xeus-build && cd /xeus-build  && ls &&\
         -DCMAKE_INSTALL_PREFIX=/install \
         -Dnlohmann_json_DIR=/install/lib/cmake/nlohmann_json \
         -Dxtl_DIR=/install/share/cmake/xtl \
-        -DOPENSSL_INCLUDE_DIR=/install/include \
-        -DOPENSSL_CRYPTO_LIBRARY=/install/libx32/libcrypto.a \
-        -DOPENSSL_SSL_LIBRARY=/install/libx32/libssl.a \
-        -DOPENSSL_ROOT_DIR=/install/ \
-        -DOPENSSL_USE_STATIC_LIBS=ON
+        -DXEUS_EMSCRIPTEN_WASM_BUILD=ON
 RUN cd /xeus-build && \
-    emmake make -j8 xeus_dummy
-RUN cd /xeus-build && \
-    emmake make install
+    emmake make -j4 install
 
 ##################################################################
 # lua
@@ -100,47 +75,39 @@ RUN cd /opt/wasm_lua && \
 
 
 
+##################################################################
+# xpropery
+##################################################################
+RUN mkdir -p /opt/xproperty/build && \
+    git clone https://github.com/jupyter-xeus/xproperty.git  /opt/xproperty/src
+
+RUN cd /opt/xproperty/build && \
+    emcmake cmake ../src/   \
+    -Dxtl_DIR=/install/share/cmake/xtl \
+    -DCMAKE_INSTALL_PREFIX=/install
+
+RUN cd /opt/xproperty/build && \
+    emmake make -j8 install
 
 
+##################################################################
+# xwidgets
+##################################################################
+RUN mkdir -p /opt/xwidgets/build && \
+    git clone -b master https://github.com/jupyter-xeus/xwidgets.git  /opt/xwidgets/src
 
-
-
-# ##################################################################
-# # xpropery
-# ##################################################################
-# RUN mkdir -p /opt/xproperty/build && \
-#     git clone https://github.com/jupyter-xeus/xproperty.git  /opt/xproperty/src
-
-# RUN cd /opt/xproperty/build && \
-#     emcmake cmake ../src/   \
-#     -Dxtl_DIR=/install/share/cmake/xtl \
-#     -DCMAKE_INSTALL_PREFIX=/install
-
-# RUN cd /opt/xproperty/build && \
-#     emmake make -j8 install
-
-
-# ##################################################################
-# # xwidgets
-# ##################################################################
-# RUN mkdir -p /opt/xwidgets/build && \
-#     git clone -b dynamics https://github.com/DerThorsten/xwidgets.git  /opt/xwidgets/src
-
-# RUN cd /opt/xwidgets/build && \
-#     emcmake cmake ../src/  \
-#     -Dxtl_DIR=/install/share/cmake/xtl \
-#     -Dxproperty_DIR=/install/lib/cmake/xproperty \
-#     -Dnlohmann_json_DIR=/install/lib/cmake/nlohmann_json \
-#     -DOPENSSL_INCLUDE_DIR=/install/include \
-#     -DOPENSSL_CRYPTO_LIBRARY=/install/libx32/libcrypto.a \
-#     -DOPENSSL_SSL_LIBRARY=/install/libx32/libssl.a \
-#     -Dxeus_DIR=/install/lib/cmake/xeus \
-#     -DXWIDGETS_BUILD_SHARED_LIBS=OFF \
-#     -DXWIDGETS_BUILD_STATIC_LIBS=ON  \
-#     -DCMAKE_INSTALL_PREFIX=/install \
-#     -DCMAKE_CXX_FLAGS="-s USE_PTHREADS=1 -pthread  -mbulk-memory  -matomics"
-# RUN cd /opt/xwidgets/build && \
-#     emmake make -j8 install
+RUN cd /opt/xwidgets/build && \
+    emcmake cmake ../src/  \
+    -Dxtl_DIR=/install/share/cmake/xtl \
+    -Dxproperty_DIR=/install/lib/cmake/xproperty \
+    -Dnlohmann_json_DIR=/install/lib/cmake/nlohmann_json \
+    -Dxeus_DIR=/install/lib/cmake/xeus \
+    -DXWIDGETS_BUILD_SHARED_LIBS=OFF \
+    -DXWIDGETS_BUILD_STATIC_LIBS=ON  \
+    -DCMAKE_INSTALL_PREFIX=/install \
+    -DCMAKE_CXX_FLAGS="-s USE_PTHREADS=1 -pthread  -mbulk-memory  -matomics"
+RUN cd /opt/xwidgets/build && \
+    emmake make -j8 install
 
 
 
@@ -156,25 +123,18 @@ COPY xeus-lua /opt/xeus-lua
 
 RUN mkdir -p /xeus-lua-build && cd /xeus-lua-build  && ls && \
     emcmake cmake  /opt/xeus-lua \
+        -DXEUS_LUA_EMSCRIPTEN_WASM_BUILD=ON \
         -DCMAKE_INSTALL_PREFIX=/install \
         -Dnlohmann_json_DIR=/install/lib/cmake/nlohmann_json \
         -Dxtl_DIR=/install/share/cmake/xtl \
         -Dxproperty_DIR=/install/lib/cmake/xproperty \
         -Dxwidgets_DIR=/install/lib/cmake/xwidgets \
-        -DOPENSSL_INCLUDE_DIR=/install/include \
-        -DOPENSSL_CRYPTO_LIBRARY=/install/libx32/libcrypto.a \
-        -DOPENSSL_SSL_LIBRARY=/install/libx32/libssl.a \
-        -DOPENSSL_ROOT_DIR=/install/ \
-        -DOPENSSL_USE_STATIC_LIBS=ON \
-        -DXLUA_WITH_XWIDGETS=OFF\
+        -DXLUA_WITH_XWIDGETS=ON\
         -DXLUA_USE_SHARED_XWIDGETS=OFF\
         -DLUA_INCLUDE_DIR=/opt/wasm_lua/lua-5.3.4/src \
         -DLUA_LIBRARY=/opt/wasm_lua/lua-5.3.4/src/liblua.a \
         -Dxeus_DIR=/install/lib/cmake/xeus 
 
 RUN cd /xeus-lua-build && \
-    emmake make -j8 xeus_lua_kernel
-    
-RUN cd /xeus-lua-build && \
-    emmake make -j8 xeus_lua
+    emmake make -j8 
 

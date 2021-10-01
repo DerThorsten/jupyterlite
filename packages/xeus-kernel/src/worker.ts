@@ -1,7 +1,9 @@
-// worker.js
-
 import createXeusModule from './xeus_lua_kernel';
-// import { XeusInterpreter } from './xeus_interpreter';
+
+console.log("CREATED THE WORKER")
+
+
+
 
 
 // We alias self to ctx and give it our newly created type
@@ -22,144 +24,36 @@ async function async_get_input_function(prompt: string) {
 }
 
 async function sendInputRequest(content: any) {
-  postMessage({
+  ctx.postMessage({
     parentHeader: _parentHeader,
     content,
-    type: 'input_request'
+    type: 'special_input_request'
   });
 }
-
 
 // eslint-disable-next-line
 // @ts-ignore: breaks typedoc
 ctx.async_get_input_function = async_get_input_function;
-
-
-
 
 // eslint-disable-next-line
 // @ts-ignore: breaks typedoc
 let resolveInputReply: any;
 
 
-function recive_shell(message: any)
+function postMessageToWorker(message:any, channel:string)
 {
-    console.log("recive_shell", message)
-    const type = message.header.msg_type
-    const parent_header = _parentHeader
-
-
-    switch(type)
-    {
-      case "execute_reply":
-      {
-        postMessage({
-          parentHeader: _parentHeader,
-          content: message.content,
-          type: 'execute_reply'
-        });
-        break;
-      }
-      case "kernel_info_reply":
-      {
-        postMessage({
-          parentHeader: _parentHeader,
-          content : message.content,
-          type: 'kernel_info_reply'
-        });
-        break
-      }
-      default:{
-        console.log("unhandeld in recive_shell in worker", type)
-      }
-    }
-
-
-    // postMessage({
-    //     type:type,
-    //     parentHeader:_parentHeader,
-    //     bundle:{
-    //       metadata: message.metadata,
-    //       data:message.content
-    //     }
-    // })
-}
-
-function recive_control(message: any)
-{
-    //console.log("recive_control", message)
-    const type = message.header.msg_type
-    const parent_header = _parentHeader
-    postMessage({
-        type:type,
-        parentHeader:_parentHeader,
-        bundle:{
-          metadata: message.metadata,
-          data:message.content
-        }
-    })
-}
-
-function recive_stdin(message: any)
-{
-    //console.log("recive_stdin", message)
-    const type = message.header.msg_type
-    const parent_header = _parentHeader
-
-
-
-    postMessage({
-        type:type,
-        parentHeader:_parentHeader,
-        bundle:{
-          metadata: message.metadata,
-          data:message.content
-        }
-    })
-}
-
-function publish(message: any, channel: string)
-{
-    console.log("publish", message, channel)
-
-    const type = message.header.msg_type
-    const parent_header = _parentHeader
-
-    switch(type)
-    {
-
-      // case "status":
-      // {
-      //   postMessage({type:type, bundle:message.content, parentHeader: _parentHeader})
-      //   break
-      // }
-      case "status":
-      case "stream":
-      case "display_data":
-      case "error":
-      {
-        postMessage({type:type, bundle: message.content, parentHeader: _parentHeader})
-        break
-      }
-      default:{
-        console.log("unhandeld stream in worker", type)
-      }
-    }
+  message.channel = channel
+  message.type = message.header.msg_type
+  message.parent_header = _parentHeader
+  ctx.postMessage(message)
 }
 
 
-
-
-async function loadCppModule(): Promise<any> {
+async function loadCppModule(moduleFactory: any): Promise<any> {
   const options: any = {
-    // preRun: [
-    //   function(module: any) {
-    //     module.ENV.LUA_PATH =
-    // ]
-    //   }
   };
 
-  return createXeusModule(options).then((Module: any) => {
+  return moduleFactory(options).then((Module: any) => {
     raw_xkernel = new Module.xkernel();
     raw_xserver =  raw_xkernel.get_server()
 
@@ -168,19 +62,20 @@ async function loadCppModule(): Promise<any> {
       switch(type)
       {
         case "shell":{
-          recive_shell(data)
+          postMessageToWorker(data, "shell") 
           break
         }
         case "control":{
-          recive_control(data)
+          throw new Error('send_control is not yet implemented');
           break
         }
         case "stdin":{
-          recive_stdin(data)
+          postMessageToWorker(data, "stdin")
           break
         }
         case "publish":{
-          publish(data, channel == 0 ? "shell" : "control")
+          // TODO ask what to do with channel
+          postMessageToWorker(data, "iopub")
           break
         }
       }
@@ -189,10 +84,7 @@ async function loadCppModule(): Promise<any> {
   });
 }
 
-
-
-const loadCppModulePromise = loadCppModule();
-
+const loadCppModulePromise = loadCppModule(createXeusModule);
 
 ctx.onmessage = async (event: MessageEvent): Promise<void> => {
   await loadCppModulePromise
@@ -200,52 +92,22 @@ ctx.onmessage = async (event: MessageEvent): Promise<void> => {
 
   const data = event.data;
   const msg = data.msg 
-  console.log("data", data)
   const msg_type = msg.header.msg_type
-  if (msg_type !== 'input_reply') {
+
+  if (msg_type !== 'input_reply'  && msg_type !== "__import__") {
     _parentHeader = data.parent["header"]
   }
-  console.log("parent header in worker", _parentHeader)
-
-  const str_msg = JSON.stringify(msg)
-  console.log("on message in worker",msg_type)
 
   if(msg_type == "input_reply"){
-    console.log("resolve the input")
     resolveInputReply(msg.content);
+  }
+  else if(msg_type == "__import__"){
+    // const p = msg.content.package_path
+    // await import(p)
   }
   else{
     const channel = msg.channel
-    switch(channel)
-    {
-      case "shell":
-      {
-        raw_xserver!.notify_shell_listener(str_msg)
-        break
-      }
-      case "control":
-      {
-        raw_xserver!.notify_control_listener(str_msg)
-        break
-      }
-      case "stdin":
-      {
-        raw_xserver!.notify_stdin_listener(str_msg)
-        break
-      }
-      default :
-      {
-        //alert(channel)
-        console.log("channel not found", channel)
-      }
-    }
+    const str_msg = JSON.stringify(msg)
+    raw_xserver!.notify_listener(str_msg,  msg.channel)
   }
-
-  // const reply = {
-  //   parentHeader: data.parent['header'],
-  //   type: 'reply'
-  //   // results
-  // };
-
-  // postMessage(reply);
 };

@@ -261,15 +261,15 @@ module.exports = [
       new CopyPlugin({
         patterns: [
           {
-            from: '../../packages/xeus-kernel/src/xeus_dummy.wasm',
-            to: '.'
-          },
-          {
-            from: '../../packages/xeus-kernel/src/xeus_lua.wasm',
-            to: '.'
-          },
-          {
             from: '../../packages/xeus-kernel/src/xeus_lua_kernel.wasm',
+            to: '.'
+          },
+          {
+            from: '../../packages/xeus-kernel/src/xeus_lua_kernel.js',
+            to: '.'
+          },
+          {
+            from: '../../packages/xeus-kernel/src/xeus_lua_kernel.worker.js',
             to: '.'
           }
         ]

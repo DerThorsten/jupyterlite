@@ -28,8 +28,8 @@ const server_kernel: JupyterLiteServerPlugin<void> = {
           metadata: {}
         },
         resources: {
-          'logo-32x32': 'TODO',
-          'logo-64x64': '/kernelspecs/xeus_small.svg'
+          'logo-32x32': '/kernelspecs/lua-logo-32x32.png',
+          'logo-64x64': '/kernelspecs/lua-logo-64x64.png'
         }
       },
       create: async (options: IKernel.IOptions): Promise<IKernel> => {

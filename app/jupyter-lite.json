@@ -1,17 +1,110 @@
 {
-  "jupyter-lite-schema-version": 0,
   "jupyter-config-data": {
     "appName": "JupyterLite",
+    "appUrl": "./lab",
     "appVersion": "0.1.0-alpha.6",
     "baseUrl": "./",
-    "appUrl": "./lab",
     "faviconUrl": "./lab/favicon.ico",
-    "federated_extensions": [],
+    "federated_extensions": [
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.ca1efc27dc965162ca86.js",
+        "name": "@jupyter-widgets/jupyterlab-manager"
+      },
+      {
+        "load": "static/remoteEntry.9c506278e545a18a8cc2.js",
+        "mimeExtension": "./mimeExtension",
+        "name": "@jupyterlab/fasta-extension",
+        "style": "./style"
+      },
+      {
+        "load": "static/remoteEntry.a6d92e11d5e8c375cfe6.js",
+        "mimeExtension": "./mimeExtension",
+        "name": "@jupyterlab/geojson-extension",
+        "style": "./style"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.bb59f8fee85dae1fdfed.js",
+        "name": "@jupyterlab/server-proxy"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.e092be97e7e0d3631ef8.js",
+        "name": "@retrolab/lab-extension",
+        "style": "./style"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.db5f6701f7a352750c55.js",
+        "name": "@telamonian/theme-darcula"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.145e469029155b53b350.js",
+        "name": "@timkpaine/jupyterlab_miami_nights"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.e9a229a6deef8e3c895b.js",
+        "name": "bqplot"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.5459894d80c1201f22ae.js",
+        "name": "ipycanvas"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.422e89a36ce1df74544d.js",
+        "name": "jupyter-cytoscape"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.8c5efb3516d04e6a5bb7.js",
+        "name": "jupyter-leaflet"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.a458e80b4361f068e82d.js",
+        "name": "jupyter-matplotlib"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.8f896d6ad92823566c46.js",
+        "name": "jupyterlab-drawio",
+        "style": "./style"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.aa1c31e56033747df726.js",
+        "name": "jupyterlab-kernelspy",
+        "style": "./style"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.7b0dfd91a418a1e7eb37.js",
+        "mimeExtension": "./mimeExtension",
+        "name": "jupyterlab-plotly"
+      },
+      {
+        "extension": "./extension",
+        "load": "static/remoteEntry.b1a291f62404c698e709.js",
+        "name": "jupyterlab-tour",
+        "style": "./style"
+      },
+      {
+        "extension": "./extension",
+        "load": "static\\remoteEntry.8511fe06ff367ce48f15.js",
+        "name": "nbdime-jupyterlab"
+      }
+    ],
     "fullLabextensionsUrl": "./lab/extensions",
     "fullMathjaxUrl": "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js",
     "fullStaticUrl": "./lab/build",
     "mathjaxConfig": "TeX-AMS_CHTML-full,Safe",
     "settingsUrl": "./lab/build/schemas",
     "themesUrl": "./lab/build/themes"
-  }
+  },
+  "jupyter-lite-schema-version": 0
 }
